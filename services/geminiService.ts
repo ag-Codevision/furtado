@@ -1,12 +1,13 @@
-
 import { GoogleGenAI, Modality, GenerateContentResponse, Type } from "@google/genai";
 import { PostContent, PostResult } from "../types";
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set");
+const apiKey = import.meta.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY environment variable not set");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey });
 
 // Declarations for client-side libraries loaded via script tags
 declare const mammoth: any;
