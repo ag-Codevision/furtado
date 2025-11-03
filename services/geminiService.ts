@@ -2,17 +2,17 @@ import { GoogleGenAI, Modality, GenerateContentResponse, Type } from "@google/ge
 import { PostContent, PostResult } from "../types";
 import { getApiKey } from './apiKeyService';
 
-const apiKey = getApiKey();
-
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey });
-
 // Declarations for client-side libraries loaded via script tags
 declare const mammoth: any;
 declare const XLSX: any;
+
+const getGoogleAI = () => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("Chave de API do Gemini não foi encontrada. Por favor, configure-a na tela inicial.");
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 
 export const fileToGenerativePart = async (file: File) => {
@@ -85,6 +85,7 @@ ${logoImageFile
 };
 
 const generateSingleImage = async (prompt: string, imageParts: any[]): Promise<string> => {
+    const ai = getGoogleAI();
     const allParts = [{ text: prompt }, ...imageParts];
     
     const imageResponse = await ai.models.generateContent({
@@ -141,6 +142,7 @@ export const generateImages = async (postContent: PostContent, styleImageFile: F
 
 
 export const generatePost = async (theme: string, styleImageFile: File | null, logoImageFile: File | null, aspectRatio: string): Promise<PostResult> => {
+    const ai = getGoogleAI();
     // Step 1: Generate Text Content
     const textGenPrompt = `
         Você é um especialista em marketing de conteúdo para o setor jurídico, com foco em direito do trabalho.
@@ -196,6 +198,7 @@ export const generatePost = async (theme: string, styleImageFile: File | null, l
 };
 
 export const complexQuery = async (prompt: string): Promise<string> => {
+    const ai = getGoogleAI();
     const response: GenerateContentResponse = await ai.models.generateContent({
         model: 'gemini-2.5-pro',
         contents: prompt,
@@ -420,6 +423,7 @@ Portanto, assim deve ser recebida a presente exordial, considerando que fora pre
     const finalPrompt = extractedTexts + prompt;
 
     try {
+        const ai = getGoogleAI();
         const fileParts = await Promise.all(nativeFiles.map(file => fileToGenerativePart(file)));
         const allPartsInRequest = [{ text: finalPrompt }, ...fileParts];
 
