@@ -1,0 +1,5 @@
+{
+  "name": "V03 - Furtado Advocacia Office Studio 02",
+  "description": "An AI-powered application for legal professionals to generate and edit images, perform grounded web searches, analyze visual data, and handle complex queries using advanced Gemini models.",
+  "requestFramePermissions": []
+}
