@@ -1,8 +1,8 @@
-
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Feature, AITool, InitialHistoryItem, UnifiedItem } from './types';
 import { AIToolsPage, DashboardPanel, HistoryPanel } from './components/FeaturePanels';
+import { getApiKey } from './services/apiKeyService';
+import { ApiKeyManager } from './components/ApiKeyManager';
 
 const Sidebar: React.FC<{ 
     activeFeature: Feature; 
@@ -86,6 +86,15 @@ const Header: React.FC = () => {
 };
 
 const App: React.FC = () => {
+    const [apiKey, setApiKey] = useState<string | null>(null);
+    const [isKeyChecked, setIsKeyChecked] = useState(false);
+
+    useEffect(() => {
+        const key = getApiKey();
+        setApiKey(key);
+        setIsKeyChecked(true);
+    }, []);
+
     const [activeFeature, setActiveFeature] = useState<Feature>(Feature.FerramentasIA);
     const [activeAiTool, setActiveAiTool] = useState<AITool | null>(null);
     const [initialHistoryItem, setInitialHistoryItem] = useState<InitialHistoryItem>(null);
@@ -106,6 +115,13 @@ const App: React.FC = () => {
         setActiveAiTool(tool);
     };
 
+    const handleKeySubmit = () => {
+        const key = getApiKey();
+        setApiKey(key);
+        // Reload to ensure all services are re-initialized with the new key
+        window.location.reload();
+    };
+
     const renderActivePanel = () => {
         switch (activeFeature) {
             case Feature.Dashboard:
@@ -118,6 +134,15 @@ const App: React.FC = () => {
                 return <AIToolsPage activeTool={activeAiTool} onToolSelect={setActiveAiTool} />;
         }
     };
+
+    if (!isKeyChecked) {
+        // Render a loading state or null while checking for the key
+        return null; 
+    }
+
+    if (!apiKey) {
+        return <ApiKeyManager onKeySubmit={handleKeySubmit} />;
+    }
 
     return (
         <div className="flex h-screen bg-[#1c1c1c] text-neutral-300 font-sans">
