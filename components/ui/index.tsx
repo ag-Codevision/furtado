@@ -1,6 +1,5 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { SavedPetition } from '../types';
+import { SavedPetition } from '../../types';
 
 export const validateFile = (file: File, accept: string): { isValid: boolean, message: string | null } => {
     const fileName = file.name.toLowerCase();
