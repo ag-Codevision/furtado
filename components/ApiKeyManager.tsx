@@ -27,7 +27,7 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onKeySubmit }) => 
                       />
                     <h1 className="text-2xl font-bold text-white">Configurar Chave de API</h1>
                     <p className="mt-2 text-neutral-400">
-                        Por favor, insira sua chave de API do Google Gemini para continuar: .
+                        Por favor, Copie esta chave de API do Google Gemini tempor-aria para continuar: AIzaSyAXC0nh1A0Dwfqk5SSvA1-602P6lIHTqXg.
                     </p>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
