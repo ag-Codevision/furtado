@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Feature, AITool, InitialHistoryItem, UnifiedItem } from './types';
 import { AIToolsPage, DashboardPanel, HistoryPanel } from './components/FeaturePanels';
-import { getApiKey } from './services/apiKeyService';
-import { ApiKeyManager } from './components/ApiKeyManager';
+import { BottomNav, FAB } from './components/ui';
 
 const Sidebar: React.FC<{ 
     activeFeature: Feature; 
     onFeatureSelect: (feature: Feature) => void; 
-    onNewPetitionClick: () => void;
-}> = ({ activeFeature, onFeatureSelect, onNewPetitionClick }) => {
-    // FIX: Added 'disabled' property to nav items to resolve TypeScript errors.
+}> = ({ activeFeature, onFeatureSelect }) => {
     const navItems = [
         { id: Feature.Dashboard, label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>, disabled: false },
         { id: Feature.MeuHistorico, label: "Meu Histórico", icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>, disabled: false },
@@ -18,42 +15,36 @@ const Sidebar: React.FC<{
 
     return (
        <aside className="w-64 flex-shrink-0 bg-[#2a2a2a] p-4 flex flex-col justify-between">
-  <div>
-    <div className="flex items-center gap-3 mb-8 px-2">
-      <img 
-        src="http://furtadoadvocacia.com.br/wp-content/uploads/2025/11/icone.png" 
-        alt="Logo Furtado Office" 
-        className="w-12 h-12"
-      />
-      <h1 className="text-xl font-bold text-white">Furtado Office IA Studio</h1>
-    </div>
-                <nav className="space-y-2">
-                    {navItems.map(item => {
-                        const isActive = activeFeature === item.id;
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => !item.disabled && onFeatureSelect(item.id as Feature)}
-                                disabled={item.disabled}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-                                    isActive
-                                        ? 'bg-[#d4af37] text-black'
-                                        : 'text-neutral-300 hover:bg-neutral-700'
-                                } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                {item.icon}
-                                <span>{item.label}</span>
-                            </button>
-                        );
-                    })}
-                </nav>
+          <div>
+            <div className="flex items-center gap-3 mb-8 px-2">
+              <img 
+                src="http://furtadoadvocacia.com.br/wp-content/uploads/2025/11/icone.png" 
+                alt="Logo Furtado Office" 
+                className="w-12 h-12"
+              />
+              <h1 className="text-xl font-bold text-white">Furtado Office IA Studio</h1>
             </div>
-            <button 
-                onClick={onNewPetitionClick}
-                className="w-full bg-[#d4af37] text-black font-bold py-3 rounded-md text-sm hover:bg-[#c8a35f] transition-colors"
-            >
-                + Nova Petição com IA
-            </button>
+            <nav className="space-y-2">
+                {navItems.map(item => {
+                    const isActive = activeFeature === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => !item.disabled && onFeatureSelect(item.id as Feature)}
+                            disabled={item.disabled}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                                isActive
+                                    ? 'bg-[#d4af37] text-black'
+                                    : 'text-neutral-300 hover:bg-neutral-700'
+                            } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {item.icon}
+                            <span>{item.label}</span>
+                        </button>
+                    );
+                })}
+            </nav>
+        </div>
         </aside>
     );
 };
@@ -61,13 +52,18 @@ const Sidebar: React.FC<{
 const Header: React.FC = () => {
     return (
         <header className="h-16 bg-[#1c1c1c] border-b border-neutral-800 flex-shrink-0 flex items-center justify-between px-6">
-            <div className="relative w-full max-w-md">
-                <input
-                    type="text"
-                    placeholder="Buscar casos, documentos..."
-                    className="w-full bg-[#2a2a2a] border border-neutral-700 rounded-md py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-[#d4af37] focus:outline-none"
-                />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <div className="flex items-center gap-2">
+                <button className="lg:hidden text-neutral-400 hover:text-white">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+                <div className="relative w-full max-w-md hidden sm:block">
+                    <input
+                        type="text"
+                        placeholder="Buscar casos, documentos..."
+                        className="w-full bg-[#2a2a2a] border border-neutral-700 rounded-md py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-[#d4af37] focus:outline-none"
+                    />
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
             </div>
             <div className="flex items-center gap-4">
                 <button className="text-neutral-400 hover:text-white">
@@ -75,7 +71,7 @@ const Header: React.FC = () => {
                 </button>
                 <div className="flex items-center gap-3">
                     <img src="https://i.pravatar.cc/40" alt="Avatar do usuário" className="h-10 w-10 rounded-full border-2 border-neutral-600" />
-                    <div className="text-right">
+                    <div className="text-right hidden sm:block">
                         <p className="text-sm font-semibold text-white">Dr. Silva</p>
                         <p className="text-xs text-neutral-400">Advogado Trabalhista</p>
                     </div>
@@ -86,15 +82,6 @@ const Header: React.FC = () => {
 };
 
 const App: React.FC = () => {
-    const [apiKey, setApiKey] = useState<string | null>(null);
-    const [isKeyChecked, setIsKeyChecked] = useState(false);
-
-    useEffect(() => {
-        const key = getApiKey();
-        setApiKey(key);
-        setIsKeyChecked(true);
-    }, []);
-
     const [activeFeature, setActiveFeature] = useState<Feature>(Feature.FerramentasIA);
     const [activeAiTool, setActiveAiTool] = useState<AITool | null>(null);
     const [initialHistoryItem, setInitialHistoryItem] = useState<InitialHistoryItem>(null);
@@ -115,13 +102,6 @@ const App: React.FC = () => {
         setActiveAiTool(tool);
     };
 
-    const handleKeySubmit = () => {
-        const key = getApiKey();
-        setApiKey(key);
-        // Reload to ensure all services are re-initialized with the new key
-        window.location.reload();
-    };
-
     const renderActivePanel = () => {
         switch (activeFeature) {
             case Feature.Dashboard:
@@ -135,30 +115,28 @@ const App: React.FC = () => {
         }
     };
 
-    if (!isKeyChecked) {
-        // Render a loading state or null while checking for the key
-        return null; 
-    }
-
-    if (!apiKey) {
-        return <ApiKeyManager onKeySubmit={handleKeySubmit} />;
-    }
-
     return (
-        <div className="flex h-screen bg-[#1c1c1c] text-neutral-300 font-sans">
-            <Sidebar 
-                activeFeature={activeFeature} 
-                onFeatureSelect={handleFeatureSelect}
-                onNewPetitionClick={() => handleToolSelect(AITool.PeticaoInicial)} 
-            />
+        <div className="flex h-screen bg-[#1c1c1c] text-neutral-300">
+            <div className="hidden lg:flex">
+                <Sidebar 
+                    activeFeature={activeFeature} 
+                    onFeatureSelect={handleFeatureSelect}
+                />
+            </div>
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto">
-                    <div className="p-6">
+                <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
+                    <div className="p-4 sm:p-6">
                         {renderActivePanel()}
                     </div>
                 </main>
             </div>
+            
+            <FAB onClick={() => handleToolSelect(AITool.PeticaoInicial)} />
+            <BottomNav 
+                activeFeature={activeFeature}
+                onFeatureSelect={handleFeatureSelect}
+            />
         </div>
     );
 };

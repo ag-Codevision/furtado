@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { SavedPetition } from '../../types';
+import { SavedPetition, Feature, AITool } from '../../types';
 
 export const validateFile = (file: File, accept: string): { isValid: boolean, message: string | null } => {
     const fileName = file.name.toLowerCase();
@@ -311,12 +311,12 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onFileChange, id
     }, [handleFiles]);
 
     return (
-        <div className="flex gap-4 items-start">
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
             <label
                 htmlFor={id}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                className="flex flex-col justify-center items-center w-48 h-32 p-4 transition bg-neutral-900 border-2 border-neutral-700 border-dashed rounded-md appearance-none cursor-pointer hover:border-amber-600 focus:outline-none flex-shrink-0"
+                className="flex flex-col justify-center items-center w-full sm:w-48 h-32 p-4 transition bg-neutral-900 border-2 border-neutral-700 border-dashed rounded-md appearance-none cursor-pointer hover:border-amber-600 focus:outline-none flex-shrink-0"
             >
                 <div className="text-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto w-8 h-8 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -385,5 +385,46 @@ export const Modal: React.FC<{ src: string; onClose: () => void }> = ({ src, onC
                 </button>
             </div>
         </div>
+    );
+};
+
+
+export const FAB: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+    <button
+        onClick={onClick}
+        className="lg:hidden fixed bottom-20 right-4 bg-[#d4af37] text-black rounded-full p-4 shadow-lg hover:bg-[#c8a35f] transition-colors z-40"
+        aria-label="Nova Petição com IA"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+    </button>
+);
+
+const navItems = [
+    { id: Feature.Dashboard, label: "Dashboard", icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
+    { id: Feature.MeuHistorico, label: "Histórico", icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg> },
+    { id: Feature.FerramentasIA, label: "IA Tools", icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg> },
+];
+
+export const BottomNav: React.FC<{ activeFeature: Feature; onFeatureSelect: (feature: Feature) => void; }> = ({ activeFeature, onFeatureSelect }) => {
+    return (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#2a2a2a] border-t border-neutral-700 flex justify-around items-center h-16 z-50">
+            {navItems.map(item => {
+                const isActive = activeFeature === item.id;
+                return (
+                    <button
+                        key={item.id}
+                        onClick={() => onFeatureSelect(item.id)}
+                        className={`flex flex-col items-center justify-center text-xs w-full h-full transition-colors ${
+                            isActive ? 'text-[#d4af37]' : 'text-neutral-400 hover:text-white'
+                        }`}
+                    >
+                        {item.icon}
+                        <span className="mt-1">{item.label}</span>
+                    </button>
+                );
+            })}
+        </nav>
     );
 };

@@ -666,6 +666,10 @@ export const PeticaoInicialPanel: React.FC<PeticaoInicialPanelProps> = ({ result
     const [error, setError] = useState<string | null>(null);
     const [copyStatus, setCopyStatus] = useState(false);
     const modeloFileInputRef = useRef<HTMLInputElement>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [petitionTitle, setPetitionTitle] = useState('');
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
 
     const handleModeloFileSingle = useCallback((file: File | undefined) => {
         if (!file) return;
@@ -720,141 +724,51 @@ export const PeticaoInicialPanel: React.FC<PeticaoInicialPanelProps> = ({ result
         }
     };
 
-    const createFormattedHtml = (resultText: string | null): string => {
-        if (!resultText) return '';
-        
-        let formattedContent = '';
-        resultText.split('\n').forEach(line => {
-            if (line.trim() === '') {
-                // Use a paragraph with a non-breaking space to enforce height based on line-height
-                formattedContent += `<p>&nbsp;</p>`;
-            } else {
-                const isTitle = line.trim() === line.trim().toUpperCase() && 
-                                line.trim().length > 0 && 
-                                !line.includes('[') && 
-                                line.trim().length < 80;
-                if (isTitle) {
-                    // Use a class to handle title styling
-                    formattedContent += `<p class="title">${line}</p>`;
-                } else {
-                    formattedContent += `<p>${line}</p>`;
-                }
-            }
-        });
-        return formattedContent;
+    const handleStartSave = () => {
+        setIsSaving(true);
+        setPetitionTitle(`Petição - ${new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`);
+        setSaveStatus('idle');
     };
 
-    const handleDownloadDocx = () => {
-        if (!result) return;
+    const handleConfirmSave = () => {
+        if (!result || !petitionTitle) return;
         try {
-            const title = `Petição Gerada - ${new Date().toISOString()}`;
-            const formattedContent = createFormattedHtml(result);
-
-            const contentHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <title>${title}</title>
-                    <style>
-                        @page {
-                            size: A4;
-                            margin-top: 2.5cm;
-                            margin-bottom: 2.5cm;
-                            margin-left: 3.0cm;
-                            margin-right: 2.0cm;
-                        }
-                        body {
-                            font-family: 'Bookman Old Style', serif;
-                            font-size: 12pt;
-                        }
-                        p {
-                            text-align: justify;
-                            text-indent: 1.25cm;
-                            line-height: 1.5;
-                            margin: 0;
-                            padding: 0;
-                        }
-                        p.title {
-                            font-weight: bold;
-                            text-indent: 0;
-                            text-transform: uppercase;
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${formattedContent}
-                </body>
-                </html>
-            `;
-    
-            const blob = new Blob([contentHtml], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `peticao-inicial.docx`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
+            historyService.addPetition(petitionTitle, result);
+            setSaveStatus('success');
         } catch (error) {
-            console.error("Falha ao baixar o DOCX:", error);
-            alert('Ocorreu um erro ao tentar baixar o arquivo.');
+            console.error("Falha ao salvar petição no histórico:", error);
+            setSaveStatus('error');
+        } finally {
+            setIsSaving(false);
+            setTimeout(() => setSaveStatus('idle'), 3000);
         }
     };
-
-    const handleDownloadPdf = () => {
-        if (!result) return;
-        
-        const title = `Petição Gerada - ${new Date().toISOString()}`;
-        const formattedContent = createFormattedHtml(result);
-
-        const contentHtml = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <title>${title}</title>
-                <style>
-                    body {
-                        font-family: 'Bookman Old Style', serif;
-                        font-size: 12pt;
-                    }
-                    p {
-                        text-align: justify;
-                        text-indent: 1.25cm;
-                        line-height: 1.5;
-                        margin: 0;
-                        padding: 0;
-                        page-break-inside: avoid;
-                    }
-                    p.title {
-                        font-weight: bold;
-                        text-indent: 0;
-                        text-transform: uppercase;
-                    }
-                </style>
-            </head>
-            <body>
-                ${formattedContent}
-            </body>
-            </html>
-        `;
-
-        const opt = {
-          margin:       [25, 20, 25, 30], // [top, right, bottom, left] in mm
-          filename:     'peticao-inicial.pdf',
-          image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        
-        html2pdf().from(contentHtml).set(opt).save();
+    
+    const handleCancelSave = () => {
+        setIsSaving(false);
+        setPetitionTitle('');
     };
     
     const handleCopyToClipboard = () => {
         if (!result) return;
         try {
-            const formattedContent = createFormattedHtml(result);
+             let formattedContent = '';
+            result.split('\n').forEach(line => {
+                if (line.trim() === '') {
+                    formattedContent += `<p>&nbsp;</p>`;
+                } else {
+                    const isTitle = line.trim() === line.trim().toUpperCase() && 
+                                    line.trim().length > 0 && 
+                                    !line.includes('[') && 
+                                    line.trim().length < 80;
+                    if (isTitle) {
+                        formattedContent += `<p class="title">${line}</p>`;
+                    } else {
+                        formattedContent += `<p>${line}</p>`;
+                    }
+                }
+            });
+
             const fullHtml = `
                 <!DOCTYPE html>
                 <html>
@@ -997,25 +911,51 @@ export const PeticaoInicialPanel: React.FC<PeticaoInicialPanelProps> = ({ result
             <div className="bg-[#2a2a2a] rounded-lg p-1 relative min-h-[500px] h-full flex flex-col">
                 <div className="flex justify-between items-center p-3 border-b border-neutral-700 flex-shrink-0">
                     <h2 className="text-sm font-semibold text-neutral-300">3. Resultado Gerado</h2>
-                    <div>
-                        {result && !isLoading && (
+                    {result && !isLoading && (
+                         !isSaving ? (
                             <div className="flex items-center gap-4">
-                                <button className="text-xs font-semibold text-neutral-300 hover:text-white transition-colors">Salvar</button>
-                                <button onClick={handleCopyToClipboard} className="flex items-center gap-1 text-xs font-semibold text-[#d4af37] hover:text-yellow-300 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                    {copyStatus ? 'Copiado!' : 'Copiar Texto'}
+                                {saveStatus === 'idle' && (
+                                    <>
+                                        <button onClick={handleStartSave} className="text-xs font-semibold text-neutral-300 hover:text-white transition-colors">
+                                            Salvar no Histórico
+                                        </button>
+                                        <button onClick={handleCopyToClipboard} className="flex items-center gap-1 text-xs font-semibold text-[#d4af37] hover:text-yellow-300 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                            {copyStatus ? 'Copiado!' : 'Copiar Texto'}
+                                        </button>
+                                    </>
+                                )}
+                                {saveStatus === 'success' && (
+                                    <div className="flex items-center gap-2 text-green-400 text-sm font-semibold">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                        <span>Salvo com sucesso!</span>
+                                    </div>
+                                )}
+                                {saveStatus === 'error' && (
+                                    <div className="flex items-center gap-2 text-red-400 text-sm font-semibold">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                                        <span>Erro ao salvar.</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={petitionTitle}
+                                    onChange={(e) => setPetitionTitle(e.target.value)}
+                                    className="w-64 text-xs p-1.5 bg-neutral-800 border border-neutral-600 rounded-md focus:ring-1 focus:ring-amber-500 focus:outline-none text-yellow-100"
+                                    placeholder="Título da petição"
+                                />
+                                <button onClick={handleConfirmSave} disabled={!petitionTitle} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-black font-bold rounded-md transition-colors text-xs disabled:bg-neutral-800 disabled:cursor-not-allowed">
+                                    Salvar
                                 </button>
-                                <button onClick={handleDownloadDocx} className="flex items-center gap-1 text-xs font-semibold text-[#d4af37] hover:text-yellow-300 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                    Baixar (.docx)
-                                </button>
-                                <button onClick={handleDownloadPdf} className="flex items-center gap-1 text-xs font-semibold text-[#d4af37] hover:text-yellow-300 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                    Baixar (.pdf)
+                                <button onClick={handleCancelSave} className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-amber-200 font-bold rounded-md transition-colors text-xs">
+                                    Cancelar
                                 </button>
                             </div>
-                        )}
-                    </div>
+                        )
+                    )}
                 </div>
                  <div className="flex-grow p-8 overflow-y-auto" style={{ maxHeight: '70vh' }}>
                     {isLoading && <div className="pt-16 flex justify-center"><Spinner /></div>}
