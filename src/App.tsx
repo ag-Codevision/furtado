@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Feature, AITool, InitialHistoryItem, UnifiedItem } from './types';
-import { AIToolsPage, DashboardPanel, HistoryPanel } from './components/FeaturePanels';
-import { BottomNav, FAB } from './components/ui';
+import { Feature, AITool, InitialHistoryItem, UnifiedItem } from '@/src/types';
+import { AIToolsPage, DashboardPanel, HistoryPanel } from '@/src/components/FeaturePanels';
+import { BottomNav, FAB } from '@/src/components/ui';
+import { getApiKey } from '@/src/services/apiKeyService';
+import { ApiKeyManager } from '@/src/components/ApiKeyManager';
 
 const Sidebar: React.FC<{ 
     activeFeature: Feature; 
@@ -82,6 +84,16 @@ const Header: React.FC = () => {
 };
 
 const App: React.FC = () => {
+    const [apiKey, setApiKey] = useState<string | null>(getApiKey());
+
+    const handleKeySubmit = () => {
+        setApiKey(getApiKey());
+    };
+
+    if (!apiKey) {
+        return <ApiKeyManager onKeySubmit={handleKeySubmit} />;
+    }
+
     const [activeFeature, setActiveFeature] = useState<Feature>(Feature.FerramentasIA);
     const [activeAiTool, setActiveAiTool] = useState<AITool | null>(null);
     const [initialHistoryItem, setInitialHistoryItem] = useState<InitialHistoryItem>(null);

@@ -1,12 +1,10 @@
-
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import * as geminiService from '../services/geminiService';
-import * as historyService from '../services/historyService';
-import * as postHistoryService from '../services/postHistoryService';
-import * as complexQueryHistoryService from '../services/complexQueryHistoryService';
-import { PostContent, postFormats, PostFormat, SavedPetition, PostResult, SavedPost, SavedQuery, AITool, UnifiedItem, InitialHistoryItem } from '../types';
-import { Card, Spinner, FileUpload, Modal, DocumentUpload, TabButton, validateFile } from './ui/index';
+import * as geminiService from '@/src/services/geminiService';
+import * as historyService from '@/src/services/historyService';
+import * as postHistoryService from '@/src/services/postHistoryService';
+import * as complexQueryHistoryService from '@/src/services/complexQueryHistoryService';
+import { PostContent, postFormats, PostFormat, SavedPetition, PostResult, SavedPost, SavedQuery, AITool, UnifiedItem, InitialHistoryItem } from '@/src/types';
+import { Card, Spinner, FileUpload, Modal, DocumentUpload, TabButton, validateFile } from '@/src/components/ui/index';
 
 // Declaration for client-side library loaded via script tag
 declare const html2pdf: any;

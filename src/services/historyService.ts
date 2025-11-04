@@ -1,4 +1,4 @@
-import { SavedPetition } from '../types';
+import { SavedPetition } from '@/src/types';
 
 const HISTORY_KEY = 'furtadoAdvocaciaHistory';
 

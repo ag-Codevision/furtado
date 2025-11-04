@@ -1,4 +1,4 @@
-import { SavedQuery } from '../types';
+import { SavedQuery } from '@/src/types';
 
 const COMPLEX_QUERY_HISTORY_KEY = 'furtadoAdvocaciaComplexQueryHistory';
 

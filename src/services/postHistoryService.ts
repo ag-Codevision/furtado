@@ -1,4 +1,4 @@
-import { SavedPost, PostResult } from '../types';
+import { SavedPost, PostResult } from '@/src/types';
 
 const POST_HISTORY_KEY = 'furtadoAdvocaciaPostHistory';
 
