@@ -10,7 +10,9 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {},
+      define: {
+        'process.env.GEMINI_API_KEY': JSON.stringify('AIzaSyAbFlc9J0iB56jakE4zk2v2UPchP8n4w88')
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

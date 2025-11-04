@@ -1,15 +1,14 @@
 import { GoogleGenAI, Modality, GenerateContentResponse, Type } from "@google/genai";
 import { PostContent, PostResult } from "@/src/types";
-import { getApiKey } from "@/src/services/apiKeyService";
 
 // Declarations for client-side libraries loaded via script tags
 declare const mammoth: any;
 declare const XLSX: any;
 
 const getAI = () => {
-    const apiKey = getApiKey();
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        throw new Error("Chave de API do Gemini não configurada. Por favor, configure-a na página inicial.");
+        throw new Error("Chave de API do Gemini não configurada no ambiente.");
     }
     return new GoogleGenAI({ apiKey });
 };
