@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import * as geminiService from '../services/geminiService';
 import * as historyService from '../services/historyService';
@@ -12,6 +10,110 @@ import { Card, Spinner, FileUpload, Modal, DocumentUpload, TabButton, validateFi
 
 // Declaration for client-side library loaded via script tag
 declare const html2pdf: any;
+
+
+// =================================================================================================
+// Reusable Petition Viewer & Logic
+// =================================================================================================
+
+const copyPetitionToClipboard = (text: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        if (!text) {
+            return reject(new Error("No text to copy."));
+        }
+        
+        try {
+            let formattedContent = '';
+            text.split('\n').forEach(line => {
+                if (line.trim() === '') {
+                    formattedContent += `<p>&nbsp;</p>`;
+                } else {
+                    const isTitle = line.trim() === line.trim().toUpperCase() && 
+                                    line.trim().length > 0 && 
+                                    !line.includes('[') && 
+                                    line.trim().length < 80;
+                    if (isTitle) {
+                        formattedContent += `<p style="font-weight: bold; text-transform: uppercase; text-align: justify; line-height: 1.5; margin: 0; padding: 0;">${line}</p>`;
+                    } else {
+                        formattedContent += `<p style="text-indent: 1.25cm; text-align: justify; line-height: 1.5; margin: 0; padding: 0;">${line}</p>`;
+                    }
+                }
+            });
+
+            const fullHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: 'Bookman Old Style', serif; font-size: 12pt; }
+                    </style>
+                </head>
+                <body>${formattedContent}</body>
+                </html>
+            `;
+    
+            const blob = new Blob([fullHtml], { type: 'text/html' });
+            const clipboardItem = new ClipboardItem({ 'text/html': blob });
+    
+            navigator.clipboard.write([clipboardItem]).then(resolve, reject);
+        } catch (error) {
+            console.error("Falha ao copiar HTML, tentando texto simples:", error);
+            navigator.clipboard.writeText(text).then(resolve, reject);
+        }
+    });
+};
+
+
+const FormattedPetitionViewer: React.FC<{ text: string }> = ({ text }) => {
+    if (!text) return null;
+    const regexPlaceholder = /(\[INFORMAÇÃO NÃO ENCONTRADA NO DOCUMENTO\])/g;
+
+    return (
+        <div
+            className="bg-white text-black mx-auto max-w-4xl rounded-lg shadow-lg"
+            style={{
+                fontFamily: "'Bookman Old Style', serif",
+                fontSize: '12pt',
+                padding: '2.5cm 2.0cm 2.5cm 3.0cm'
+            }}
+        >
+            {text.split('\n').map((line, lineIndex) => {
+                const isTitle = line.trim() === line.trim().toUpperCase() &&
+                                line.trim().length > 0 &&
+                                !line.includes('[') &&
+                                line.trim().length < 80;
+                
+                if (line.trim() === '') return <div key={lineIndex} style={{ height: '0.75em' }}></div>;
+
+                const parts = line.split(regexPlaceholder);
+                
+                return (
+                    <p
+                        key={lineIndex}
+                        style={{
+                            textIndent: isTitle ? '0' : '1.25cm',
+                            fontWeight: isTitle ? 'bold' : 'normal',
+                            textTransform: isTitle ? 'uppercase' : 'none',
+                            textAlign: 'justify',
+                            lineHeight: '1.5',
+                            margin: 0,
+                            padding: 0,
+                        }}
+                    >
+                        {parts.map((part, partIndex) =>
+                            regexPlaceholder.test(part) ? (
+                                <span key={partIndex} className="text-red-500 font-bold">{part}</span>
+                            ) : (
+                                part
+                            )
+                        )}
+                    </p>
+                );
+            })}
+        </div>
+    );
+};
 
 
 // =================================================================================================
@@ -751,107 +853,15 @@ export const PeticaoInicialPanel: React.FC<PeticaoInicialPanelProps> = ({ result
     
     const handleCopyToClipboard = () => {
         if (!result) return;
-        try {
-             let formattedContent = '';
-            result.split('\n').forEach(line => {
-                if (line.trim() === '') {
-                    formattedContent += `<p>&nbsp;</p>`;
-                } else {
-                    const isTitle = line.trim() === line.trim().toUpperCase() && 
-                                    line.trim().length > 0 && 
-                                    !line.includes('[') && 
-                                    line.trim().length < 80;
-                    if (isTitle) {
-                        formattedContent += `<p class="title">${line}</p>`;
-                    } else {
-                        formattedContent += `<p>${line}</p>`;
-                    }
-                }
-            });
-
-            const fullHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <style>
-                        body { font-family: 'Bookman Old Style', serif; font-size: 12pt; }
-                        p { text-align: justify; text-indent: 1.25cm; line-height: 1.5; margin: 0; padding: 0; }
-                        p.title { font-weight: bold; text-indent: 0; text-transform: uppercase; }
-                    </style>
-                </head>
-                <body>${formattedContent}</body>
-                </html>
-            `;
-    
-            const blob = new Blob([fullHtml], { type: 'text/html' });
-            const clipboardItem = new ClipboardItem({ 'text/html': blob });
-    
-            navigator.clipboard.write([clipboardItem]).then(() => {
+        copyPetitionToClipboard(result)
+            .then(() => {
                 setCopyStatus(true);
                 setTimeout(() => setCopyStatus(false), 2500);
+            })
+            .catch(err => {
+                alert('Ocorreu um erro ao tentar copiar o texto.');
+                console.error("Falha na cópia:", err);
             });
-        } catch (error) {
-            console.error("Falha ao copiar para a área de transferência:", error);
-            // Fallback para texto simples
-            navigator.clipboard.writeText(result).then(() => {
-                alert('A formatação não pôde ser copiada, mas o texto simples foi copiado com sucesso.');
-                setCopyStatus(true);
-                setTimeout(() => setCopyStatus(false), 2500);
-            }).catch(err => {
-                 alert('Ocorreu um erro ao tentar copiar o texto.');
-                 console.error("Falha no fallback de cópia:", err);
-            });
-        }
-    };
-
-    const renderResultWithHighlight = (text: string | null) => {
-        if (!text) return null;
-        const regexPlaceholder = /(\[INFORMAÇÃO NÃO ENCONTRADA NO DOCUMENTO\])/g;
-    
-        return (
-            <div
-                className="bg-white text-black mx-auto max-w-4xl rounded-lg shadow-lg"
-                style={{
-                    fontFamily: "'Bookman Old Style', serif",
-                    fontSize: '12pt',
-                    padding: '2.5cm 2.0cm 2.5cm 3.0cm'
-                }}
-            >
-                {text.split('\n').map((line, lineIndex) => {
-                    const isTitle = line.trim() === line.trim().toUpperCase() &&
-                                    line.trim().length > 0 &&
-                                    !line.includes('[') &&
-                                    line.trim().length < 80;
-                    
-                    if (line.trim() === '') return <div key={lineIndex} style={{ height: '0.75em' }}></div>;
-    
-                    const parts = line.split(regexPlaceholder);
-                    
-                    return (
-                        <p
-                            key={lineIndex}
-                            style={{
-                                textIndent: isTitle ? '0' : '1.25cm',
-                                fontWeight: isTitle ? 'bold' : 'normal',
-                                textTransform: isTitle ? 'uppercase' : 'none',
-                                textAlign: 'justify',
-                                lineHeight: '1.5',
-                                margin: 0,
-                                padding: 0,
-                            }}
-                        >
-                            {parts.map((part, partIndex) =>
-                                regexPlaceholder.test(part) ? (
-                                    <span key={partIndex} className="text-red-500 font-bold">{part}</span>
-                                ) : (
-                                    part
-                                )
-                            )}
-                        </p>
-                    );
-                })}
-            </div>
-        );
     };
 
     const canSubmit = !isLoading && documentos.length > 0;
@@ -960,7 +970,7 @@ export const PeticaoInicialPanel: React.FC<PeticaoInicialPanelProps> = ({ result
                  <div className="flex-grow p-8 overflow-y-auto" style={{ maxHeight: '70vh' }}>
                     {isLoading && <div className="pt-16 flex justify-center"><Spinner /></div>}
                     {error && <div className="p-3 bg-red-900/50 border border-red-700 text-red-200 rounded-md text-sm">{error}</div>}
-                    {!isLoading && !error && result && renderResultWithHighlight(result)}
+                    {!isLoading && !error && result && <FormattedPetitionViewer text={result} />}
                     {!isLoading && !error && !result && <div className="flex items-center justify-center h-full text-neutral-500 text-sm">O resultado aparecerá aqui...</div>}
                 </div>
             </div>
@@ -1162,8 +1172,8 @@ const HistoryListItem: React.FC<HistoryListItemProps> = ({ item, isSelected, onS
 const PetitionHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, onInitialItemConsumed }) => {
     const [petitions, setPetitions] = useState<SavedPetition[]>([]);
     const [selectedPetition, setSelectedPetition] = useState<SavedPetition | null>(null);
-    const [editingContent, setEditingContent] = useState('');
     const [editingTitle, setEditingTitle] = useState('');
+    const [copyStatus, setCopyStatus] = useState(false);
 
     const loadHistory = useCallback(() => {
         const history = historyService.getAllPetitions();
@@ -1187,10 +1197,8 @@ const PetitionHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, o
     useEffect(() => {
         if (selectedPetition) {
             setEditingTitle(selectedPetition.title);
-            setEditingContent(selectedPetition.content);
         } else {
             setEditingTitle('');
-            setEditingContent('');
         }
     }, [selectedPetition]);
 
@@ -1203,7 +1211,6 @@ const PetitionHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, o
 
         historyService.updatePetition(selectedPetition.id, {
             title: editingTitle,
-            content: editingContent,
         });
 
         const updatedPetitions = historyService.getAllPetitions();
@@ -1212,7 +1219,7 @@ const PetitionHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, o
         const newlySelectedItem = updatedPetitions.find(p => p.id === selectedPetition.id);
         setSelectedPetition(newlySelectedItem || null);
 
-        alert("Petição atualizada com sucesso!");
+        alert("Título da petição atualizado com sucesso!");
     };
     
     const handleDelete = (id: string) => {
@@ -1223,6 +1230,19 @@ const PetitionHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, o
             }
             loadHistory();
         }
+    };
+    
+    const handleCopyToClipboard = () => {
+        if (!selectedPetition) return;
+        copyPetitionToClipboard(selectedPetition.content)
+            .then(() => {
+                setCopyStatus(true);
+                setTimeout(() => setCopyStatus(false), 2500);
+            })
+            .catch(err => {
+                alert('Ocorreu um erro ao tentar copiar o texto.');
+                console.error("Falha na cópia:", err);
+            });
     };
 
     return (
@@ -1247,40 +1267,43 @@ const PetitionHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, o
             <div className="lg:col-span-2 bg-neutral-950/50 border border-neutral-800 rounded-lg p-6 flex flex-col overflow-hidden">
                 {selectedPetition ? (
                     <>
-                        <div className="flex-shrink-0 mb-4 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-amber-200 mb-1">Título</label>
-                                <input
-                                    type="text"
-                                    value={editingTitle}
-                                    onChange={(e) => setEditingTitle(e.target.value)}
-                                    className="w-full p-2 bg-neutral-800 border border-neutral-700 rounded-md focus:ring-1 focus:ring-amber-500 focus:outline-none text-yellow-100"
-                                    placeholder="Título da Petição"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex-grow flex flex-col">
-                            <label className="block text-sm font-medium text-amber-200 mb-1">Conteúdo</label>
-                             <textarea
-                                value={editingContent}
-                                onChange={(e) => setEditingContent(e.target.value)}
-                                className="w-full flex-grow p-2 bg-neutral-800 border border-neutral-700 rounded-md focus:outline-none text-white font-mono text-sm"
+                        <div className="flex-shrink-0 mb-4">
+                             <label className="block text-sm font-medium text-amber-200 mb-1">Título</label>
+                             <input
+                                type="text"
+                                value={editingTitle}
+                                onChange={(e) => setEditingTitle(e.target.value)}
+                                className="w-full p-2 bg-neutral-800 border border-neutral-700 rounded-md focus:ring-1 focus:ring-amber-500 focus:outline-none text-yellow-100"
+                                placeholder="Título da Petição"
                             />
                         </div>
-                        <div className="flex items-center gap-3 mt-4 flex-shrink-0">
+
+                        <div className="flex items-center gap-3 mb-4 flex-shrink-0">
                              <button onClick={handleUpdate} className="px-4 py-2 bg-[#d4af37] hover:bg-[#c8a35f] text-black font-bold rounded-md transition-colors text-sm">
-                                Salvar Alterações
+                                Salvar Título
+                             </button>
+                             <button onClick={handleCopyToClipboard} className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-amber-200 font-bold rounded-md transition-colors text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                {copyStatus ? 'Copiado!' : 'Copiar Formatado'}
                              </button>
                              <button onClick={() => handleDelete(selectedPetition.id)} className="px-4 py-2 bg-transparent hover:bg-red-900/50 text-red-400 font-semibold rounded-md transition-colors text-sm border border-red-800 hover:border-red-700">
                                 Excluir
                              </button>
                         </div>
+
+                        <div className="flex-grow flex flex-col min-h-0">
+                            <label className="block text-sm font-medium text-amber-200 mb-1 flex-shrink-0">Conteúdo</label>
+                            <div className="flex-grow overflow-y-auto border border-neutral-700 rounded-md bg-neutral-800 p-2">
+                                <FormattedPetitionViewer text={selectedPetition.content} />
+                            </div>
+                        </div>
+
                     </>
                 ) : (
                     <div className="flex flex-col justify-center items-center h-full text-center text-neutral-500 p-8">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         <h3 className="font-semibold text-lg text-neutral-300">Selecione um item</h3>
-                        <p className="mt-1 text-sm">Escolha um documento da lista para visualizar e editar seu conteúdo aqui.</p>
+                        <p className="mt-1 text-sm">Escolha um documento da lista para visualizar seu conteúdo aqui.</p>
                     </div>
                 )}
             </div>
