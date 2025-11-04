@@ -4,7 +4,8 @@ import * as historyService from '@/src/services/historyService';
 import * as postHistoryService from '@/src/services/postHistoryService';
 import * as complexQueryHistoryService from '@/src/services/complexQueryHistoryService';
 import { PostContent, postFormats, PostFormat, SavedPetition, PostResult, SavedPost, SavedQuery, AITool, UnifiedItem, InitialHistoryItem } from '@/src/types';
-import { Card, Spinner, FileUpload, Modal, DocumentUpload, TabButton, validateFile } from '@/src/components/ui/index';
+import { Card, Spinner, Modal, DocumentUpload, TabButton, validateFile } from '@/src/components/ui/index';
+import SingleFileUpload from '@/src/components/ui/SingleFileUpload';
 
 // Declaration for client-side library loaded via script tag
 declare const html2pdf: any;
@@ -479,11 +480,11 @@ export const PostGeneratorPanel: React.FC<PostGeneratorPanelProps> = ({ result, 
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-amber-200 mb-2">Imagem de Referência de Estilo <span className="text-neutral-400">(Opcional)</span></label>
-                            <FileUpload onFileSelect={setStyleImageFile} onFileRemove={() => setStyleImageFile(null)} id="style-ref-upload" />
+                            <SingleFileUpload onFileSelect={setStyleImageFile} id="style-ref-upload" />
                         </div>
                          <div>
                             <label className="block text-sm font-medium text-amber-200 mb-2">Logo do Escritório <span className="text-neutral-400">(Opcional)</span></label>
-                            <FileUpload onFileSelect={setLogoImageFile} onFileRemove={() => setLogoImageFile(null)} id="logo-upload" />
+                            <SingleFileUpload onFileSelect={setLogoImageFile} id="logo-upload" />
                         </div>
                     </div>
 
