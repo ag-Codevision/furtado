@@ -33,18 +33,10 @@ const aspectRatioDescriptions: Record<string, string> = {
     '3:4': 'formato de pin vertical (3 por 4)',
 };
 
-const createImageGenPrompt = (postContent: PostContent, styleImageFile: File | null, logoImageFile: File | null, aspectRatio: string, withText: boolean): string => {
+const createImageGenPrompt = (postContent: PostContent, styleImageFile: File | null, logoImageFile: File | null, aspectRatio: string): string => {
     const aspectRatioDescription = aspectRatioDescriptions[aspectRatio] ?? `proporção de ${aspectRatio}`;
 
-    const textInstruction = withText 
-        ? `
-**[REGRA CRÍTICA #2 - INCLUSÃO DE TEXTO]**
-- Incorpore o seguinte texto de forma criativa, legível e elegante na imagem:
-  - **Título Principal:** "${postContent.title}"
-  - **Subtítulo (menor):** "${postContent.subtitle}"
-- A tipografia deve ser profissional e complementar ao estilo visual. O texto deve ser o ponto focal, mas integrado harmonicamente.
-`
-        : `
+    const textInstruction = `
 **[REGRA CRÍTICA #2 - SEM TEXTO]**
 A imagem final NÃO DEVE conter NENHUM texto, NENHUMA letra, NENHUMA palavra, NENHUMA marca d'água. Deve ser puramente visual.
 `;
@@ -117,7 +109,7 @@ const generateSingleImage = async (prompt: string, imageParts: any[]): Promise<s
 };
 
 
-export const generateImages = async (postContent: PostContent, styleImageFile: File | null, logoImageFile: File | null, aspectRatio: string): Promise<{imageUrlWithText: string; imageUrlWithoutText: string}> => {
+export const generateImage = async (postContent: PostContent, styleImageFile: File | null, logoImageFile: File | null, aspectRatio: string): Promise<string> => {
     const imageParts = [];
     if (styleImageFile) {
         imageParts.push(await fileToGenerativePart(styleImageFile));
@@ -126,15 +118,9 @@ export const generateImages = async (postContent: PostContent, styleImageFile: F
         imageParts.push(await fileToGenerativePart(logoImageFile));
     }
 
-    const promptWithText = createImageGenPrompt(postContent, styleImageFile, logoImageFile, aspectRatio, true);
-    const promptWithoutText = createImageGenPrompt(postContent, styleImageFile, logoImageFile, aspectRatio, false);
-
-    const [imageUrlWithText, imageUrlWithoutText] = await Promise.all([
-        generateSingleImage(promptWithText, imageParts),
-        generateSingleImage(promptWithoutText, imageParts),
-    ]);
-
-    return { imageUrlWithText, imageUrlWithoutText };
+    const prompt = createImageGenPrompt(postContent, styleImageFile, logoImageFile, aspectRatio);
+    const imageUrl = await generateSingleImage(prompt, imageParts);
+    return imageUrl;
 };
 
 
@@ -187,10 +173,10 @@ export const generatePost = async (theme: string, styleImageFile: File | null, l
         throw new Error(message);
     }
 
-    // Step 2: Generate Images using the generated text and optional input images
-    const { imageUrlWithText, imageUrlWithoutText } = await generateImages(postContent, styleImageFile, logoImageFile, aspectRatio);
+    // Step 2: Generate Image using the generated text and optional input images
+    const imageUrl = await generateImage(postContent, styleImageFile, logoImageFile, aspectRatio);
 
-    return { postContent, imageUrlWithText, imageUrlWithoutText };
+    return { postContent, imageUrl };
 };
 
 export const complexQuery = async (prompt: string): Promise<string> => {

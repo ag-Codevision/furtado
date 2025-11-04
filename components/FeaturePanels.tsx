@@ -229,14 +229,14 @@ interface PostResultDisplayProps {
 }
 
 const PostResultDisplay: React.FC<PostResultDisplayProps> = ({ result, onRegenerate, onRegenerateImage, isImageLoading, onImageClick, onDownloadTexts, onSaveToHistory, saveStatus }) => {
-    const { postContent, imageUrlWithText, imageUrlWithoutText } = result;
+    const { postContent, imageUrl } = result;
     const [copyStatus, setCopyStatus] = useState(false);
 
-    const handleDownloadImage = (withText: boolean) => {
+    const handleDownloadImage = () => {
         try {
             const link = document.createElement('a');
-            link.href = withText ? imageUrlWithText : imageUrlWithoutText;
-            const filename = `${postContent.title.toLowerCase().replace(/\s+/g, '-')}-${withText ? 'com-texto' : 'sem-texto'}.png`;
+            link.href = imageUrl;
+            const filename = `${postContent.title.toLowerCase().replace(/\s+/g, '-')}.png`;
             link.download = filename;
             document.body.appendChild(link);
             link.click();
@@ -273,12 +273,12 @@ const PostResultDisplay: React.FC<PostResultDisplayProps> = ({ result, onRegener
             <h3 className="font-semibold text-lg mb-4 text-amber-200">Post Gerado</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <div className="w-full space-y-4">
-                     <div className="grid grid-cols-2 gap-2">
+                     <div className="grid grid-cols-1 gap-2">
                          <div className="relative w-full rounded-lg overflow-hidden group">
-                            <button onClick={() => onImageClick(imageUrlWithText)} className="w-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-neutral-900 focus:ring-amber-500 rounded-lg">
+                            <button onClick={() => onImageClick(imageUrl)} className="w-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-neutral-900 focus:ring-amber-500 rounded-lg">
                                 <img 
-                                    src={imageUrlWithText} 
-                                    alt="Criativo do post com texto" 
+                                    src={imageUrl} 
+                                    alt="Criativo do post" 
                                     className="w-full h-auto shadow-lg group-hover:opacity-90 transition-opacity" 
                                 />
                             </button>
@@ -287,22 +287,6 @@ const PostResultDisplay: React.FC<PostResultDisplayProps> = ({ result, onRegener
                                     <Spinner />
                                 </div>
                             )}
-                             <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs text-center p-1">Com Texto</div>
-                         </div>
-                         <div className="relative w-full rounded-lg overflow-hidden group">
-                             <button onClick={() => onImageClick(imageUrlWithoutText)} className="w-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-neutral-900 focus:ring-amber-500 rounded-lg">
-                                <img 
-                                    src={imageUrlWithoutText} 
-                                    alt="Criativo do post sem texto" 
-                                    className="w-full h-auto shadow-lg group-hover:opacity-90 transition-opacity" 
-                                />
-                            </button>
-                             {isImageLoading && (
-                                <div className="absolute inset-0 bg-black bg-opacity-60 flex justify-center items-center rounded-lg">
-                                    <Spinner />
-                                </div>
-                            )}
-                            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs text-center p-1">Sem Texto</div>
                          </div>
                      </div>
                      <div className="space-y-2">
@@ -311,18 +295,15 @@ const PostResultDisplay: React.FC<PostResultDisplayProps> = ({ result, onRegener
                          </button>
                          <div className="grid grid-cols-2 gap-2">
                            <button onClick={onRegenerateImage} disabled={isImageLoading} className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-amber-200 font-bold rounded-md transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-                               {isImageLoading ? <Spinner/> : 'Gerar Novas Imagens'}
+                               {isImageLoading ? <Spinner/> : 'Gerar Nova Imagem'}
                            </button>
-                           <button onClick={() => handleDownloadImage(true)} className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold rounded-md transition-colors text-sm">
-                               Baixar c/ Texto
+                           <button onClick={handleDownloadImage} className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold rounded-md transition-colors text-sm">
+                               Baixar Imagem
                            </button>
-                           <button onClick={() => handleDownloadImage(false)} className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold rounded-md transition-colors text-sm">
-                               Baixar s/ Texto
-                           </button>
-                           <button onClick={onRegenerate} className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold rounded-md transition-colors text-sm">
+                           <button onClick={onRegenerate} className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold rounded-md transition-colors text-sm col-span-2">
                                Gerar Tudo Novamente
                            </button>
-                            <button onClick={handleCopyTexts} className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-amber-200 font-bold rounded-md transition-colors text-sm">
+                            <button onClick={handleCopyTexts} className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-amber-200 font-bold rounded-md transition-colors text-sm col-span-2">
                                {copyStatus ? 'Copiado!' : 'Copiar Textos'}
                            </button>
                         </div>
@@ -397,8 +378,8 @@ export const PostGeneratorPanel: React.FC<PostGeneratorPanelProps> = ({ result, 
         setIsImageLoading(true);
         setError(null);
         try {
-            const { imageUrlWithText, imageUrlWithoutText } = await geminiService.generateImages(result.postContent, styleImageFile, logoImageFile, aspectRatio);
-            setResult({ ...result, imageUrlWithText, imageUrlWithoutText });
+            const imageUrl = await geminiService.generateImage(result.postContent, styleImageFile, logoImageFile, aspectRatio);
+            setResult({ ...result, imageUrl });
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -1397,7 +1378,7 @@ const PostHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, onIni
                                     title: p.post.postContent.title,
                                     savedAt: p.savedAt,
                                     type: 'Post',
-                                    imageUrl: p.post.imageUrlWithText,
+                                    imageUrl: (p.post as any).imageUrl || (p.post as any).imageUrlWithText, // backward compatibility
                                 }}
                                 isSelected={selectedPost?.id === p.id}
                                 onSelect={() => handleSelectPost(p)}
@@ -1411,14 +1392,9 @@ const PostHistoryPanel: React.FC<HistorySubPanelProps> = ({ initialItemId, onIni
                 <div className="overflow-y-auto flex-grow pr-2 -mr-2">
                     {selectedPost && editingPost ? (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4">
                                 <div>
-                                    <img src={selectedPost.post.imageUrlWithText} alt="Post com texto" className="w-full rounded-lg shadow-lg" />
-                                    <p className="text-center text-xs text-neutral-400 mt-1">Com Texto</p>
-                                </div>
-                                <div>
-                                    <img src={selectedPost.post.imageUrlWithoutText} alt="Post sem texto" className="w-full rounded-lg shadow-lg" />
-                                    <p className="text-center text-xs text-neutral-400 mt-1">Sem Texto</p>
+                                    <img src={(selectedPost.post as any).imageUrl || (selectedPost.post as any).imageUrlWithText} alt="Post" className="w-full rounded-lg shadow-lg" />
                                 </div>
                             </div>
                             

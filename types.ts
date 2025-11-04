@@ -59,8 +59,7 @@ export interface SavedQuery {
 
 export interface PostResult {
     postContent: PostContent;
-    imageUrlWithText: string;
-    imageUrlWithoutText: string;
+    imageUrl: string;
 }
 export interface SavedPost {
   id: string;
