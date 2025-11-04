@@ -230,7 +230,6 @@ interface PostResultDisplayProps {
 
 const PostResultDisplay: React.FC<PostResultDisplayProps> = ({ result, onRegenerate, onRegenerateImage, isImageLoading, onImageClick, onDownloadTexts, onSaveToHistory, saveStatus }) => {
     const { postContent, imageUrl } = result;
-    const [copyStatus, setCopyStatus] = useState(false);
 
     const handleDownloadImage = () => {
         try {
@@ -245,15 +244,6 @@ const PostResultDisplay: React.FC<PostResultDisplayProps> = ({ result, onRegener
             console.error("Falha ao baixar a imagem:", error);
             alert('Ocorreu um erro ao tentar baixar a imagem. O seu navegador pode estar bloqueando downloads automáticos.');
         }
-    };
-    
-    const handleCopyTexts = () => {
-        const { title, subtitle, copy, hashtags, seoKeywords } = postContent;
-        const textToCopy = `Título: ${title}\n\nSubtítulo: ${subtitle}\n\n${copy}\n\nHashtags: ${hashtags.join(' ')}\n\nPalavras-chave (SEO): ${seoKeywords.join(', ')}`;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            setCopyStatus(true);
-            setTimeout(() => setCopyStatus(false), 2000);
-        });
     };
     
     const saveButtonText = {
@@ -303,8 +293,8 @@ const PostResultDisplay: React.FC<PostResultDisplayProps> = ({ result, onRegener
                            <button onClick={onRegenerate} className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold rounded-md transition-colors text-sm col-span-2">
                                Gerar Tudo Novamente
                            </button>
-                            <button onClick={handleCopyTexts} className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-amber-200 font-bold rounded-md transition-colors text-sm col-span-2">
-                               {copyStatus ? 'Copiado!' : 'Copiar Textos'}
+                            <button onClick={onDownloadTexts} className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-amber-200 font-bold rounded-md transition-colors text-sm col-span-2">
+                               Baixar Texto (Word)
                            </button>
                         </div>
                     </div>

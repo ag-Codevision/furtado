@@ -37,8 +37,13 @@ const createImageGenPrompt = (postContent: PostContent, styleImageFile: File | n
     const aspectRatioDescription = aspectRatioDescriptions[aspectRatio] ?? `proporção de ${aspectRatio}`;
 
     const textInstruction = `
-**[REGRA CRÍTICA #2 - SEM TEXTO]**
-A imagem final NÃO DEVE conter NENHUM texto, NENHUMA letra, NENHUMA palavra, NENHUMA marca d'água. Deve ser puramente visual.
+**[REGRA CRÍTICA #2 - SEM TEXTO, PRIORIDADE MÁXIMA]**
+A imagem final NÃO DEVE conter **NENHUM TEXTO**.
+- **NENHUMA LETRA.**
+- **NENHUMA PALAVRA.**
+- **NENHUMA MARCA D'ÁGUA.**
+- **A imagem deve ser 100% VISUAL e ABSTRATA.**
+- Ignore qualquer texto presente no título ou no conteúdo do post. O objetivo é criar uma representação visual, não um banner com texto.
 `;
 
     return `
@@ -62,7 +67,18 @@ ${textInstruction}
 
 **PASSO 2: ESTILO VISUAL**
 ${styleImageFile 
-    ? "- Use a primeira imagem de referência como INSPIRAÇÃO VISUAL (estilo, cores, composição). A proporção desta imagem de referência é irrelevante e DEVE SER IGNORADA." 
+    ? `
+- **ANÁLISE E APLICAÇÃO DE ESTILO DA IMAGEM DE REFERÊNCIA:**
+  - **Análise Detalhada:** Analise CUIDADOSAMENTE a primeira imagem de referência enviada para identificar seu estilo visual predominante. Preste atenção aos seguintes elementos:
+    - **Tipo de Arte:** É realista, ilustrativa, vetorial, digital painting, foto artística, etc.?
+    - **Paleta de Cores:** Quais são as cores dominantes, secundárias e de destaque?
+    - **Iluminação:** Como é a iluminação? É suave, dura, dramática, natural? De onde vêm as fontes de luz?
+    - **Textura:** A imagem tem texturas visíveis (granulação, pinceladas, superfícies foscas/brilhantes)?
+    - **Nível de Contraste:** O contraste é alto ou baixo?
+    - **Atmosfera Geral:** Qual é o "mood" da imagem (sóbrio, enérgico, calmo, luxuoso)?
+  - **Aplicação do Estilo:** Gere uma NOVA imagem aplicando EXATAMENTE o mesmo estilo, cores e características visuais que você observou na imagem de referência.
+  - **Originalidade:** NÃO COPIE o conteúdo ou os elementos específicos da imagem de referência. O objetivo é criar uma composição original e criativa que mantenha 100% de fidelidade ao ESTILO da referência, mas com um conteúdo novo baseado no TEMA DO POST (PASSO 1).
+  - **Qualidade Final:** O resultado deve ter uma aparência profissional, com harmonia visual e boa iluminação.` 
     : `- Crie um fundo visual com base no seguinte estilo detalhado: Estética jurídica de luxo, ambiente escuro, profundidade de campo rasa, iluminação cinematográfica discreta, luz principal quente + luz de contorno sutil, detalhes em dourado e partículas douradas suaves, texturas ricas, pretos foscos, um toque de latão envelhecido. Paleta de cores: #0B0B0F, #1A1A1F, #C8A35F, #D4AF37, #F5F2E8, #8C6B3E. Adicione granulação de filme fina, vinheta leve, brilho suave apenas nos elementos dourados, realces brilhantes controlados. Composição usando a regra dos terços, espaço negativo generoso, toques de desfoque em primeiro plano, bokeh de fundo. Editorial, elegante, realista, premium. Sem neon, sem desenho animado, sem alta saturação. Foco seletivo, chiaroscuro dramático, bokeh de fundo, ultra-detalhe, assunto nítido, brilho de bom gosto, gradação de cores coesa.`
 }
 
@@ -250,14 +266,22 @@ export const generatePeticaoInicial = async (documentos: File[], modeloFile: Fil
                     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                     let fullSheetText = '';
                     workbook.SheetNames.forEach((sheetName: string) => {
-                        fullSheetText += `\n--- Planilha: ${sheetName} ---\n`;
+                        fullSheetText += `
+--- Planilha: ${sheetName} ---
+`;
                         const worksheet = workbook.Sheets[sheetName];
                         const csvData = XLSX.utils.sheet_to_csv(worksheet);
                         fullSheetText += csvData;
                     });
                     textContent = fullSheetText;
                 }
-                return `\n\n--- INÍCIO DO CONTEÚDO DO ARQUIVO: ${file.name} ---\n${textContent}\n--- FIM DO CONTEÚDO DO ARQUIVO: ${file.name} ---\n`;
+                return `
+
+
+--- INÍCIO DO CONTEÚDO DO ARQUIVO: ${file.name} ---
+${textContent}
+--- FIM DO CONTEÚDO DO ARQUIVO: ${file.name} ---
+`;
             } catch (err: any) {
                  const message = err.message || 'não foi possível extrair o conteúdo';
                  throw new Error(`Falha ao processar o arquivo '${file.name}': ${message}. Verifique se o arquivo não está corrompido e se o formato é .docx (para Word).`);
@@ -291,7 +315,10 @@ export const generatePeticaoInicial = async (documentos: File[], modeloFile: Fil
 
             O modelo contém blocos de texto que DEVEM SER PRESERVADOS na íntegra, sem NENHUMA alteração. Eles já estão no lugar certo no texto do modelo, mas estão listados aqui para sua referência.
             BLOCOS DE TEXTO A SEREM PRESERVADOS:
-            ${preservedTextBlocks.map((block, i) => `--- Bloco ${i + 1} ---\n${block}\n--- Fim do Bloco ${i + 1} ---\n`).join('\n')}
+            ${preservedTextBlocks.map((block, i) => `--- Bloco ${i + 1} ---
+${block}
+--- Fim do Bloco ${i + 1} ---
+`).join('\n')}
 
             Abaixo está o modelo completo a ser seguido. Use-o como base para a petição final, combinando-o com as informações extraídas dos arquivos de caso.
             --- INÍCIO DO MODELO ---
@@ -378,7 +405,8 @@ Portanto, assim deve ser recebida a presente exordial, considerando que fora pre
     }
       
     const formattingInstruction = `
-        \nINSTRUÇÃO DE FORMATAÇÃO FINAL (PRIORIDADE MÁXIMA):
+
+INSTRUÇÃO DE FORMATAÇÃO FINAL (PRIORIDADE MÁXIMA):
         Gere o conteúdo final em formato de documento jurídico profissional, seguindo rigorosamente as seguintes configurações de estilo e formatação:
 
         📄 Configurações do Documento
